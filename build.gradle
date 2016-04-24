@@ -1,0 +1,105 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.3.0.RELEASE'
+
+    }
+}
+
+import com.github.torczuk.sherlock.plugin.spark.SparkLauncher
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'groovy'
+apply plugin: SparkLauncher
+apply plugin: 'spring-boot'
+
+repositories {
+    mavenCentral()
+}
+
+springBoot {
+    mainClass = "com.github.torczuk.webwalker.WebWalker"
+}
+
+configurations {
+    all*.exclude group: "org.hamcrest", module: 'hamcrest-core'
+    all*.exclude group: "org.hamcrest", module: 'hamcrest-library'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.13'
+    compile 'ch.qos.logback:logback-classic:1.1.3'
+    compile 'org.springframework.boot:spring-boot-starter-jetty'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'commons-io:commons-io:2.4'
+    compile 'org.jsoup:jsoup:1.7.2'
+    compile 'com.google.guava:guava:19.0'
+    compile 'commons-codec:commons-codec:1.10'
+
+    testCompile 'com.sparkjava:spark-core:2.3'
+    testCompile 'junit:junit:4.10'
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.5'
+    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+    testCompile 'cglib:cglib-nodep:2.2'
+    testCompile 'org.spockframework:spock-spring:1.0-groovy-2.4'
+    testCompile 'org.springframework:spring-test:4.1.6.RELEASE'
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
+    testCompile 'org.assertj:assertj-core:3.4.1'
+    testCompile 'com.jayway.awaitility:awaitility:1.7.0'
+    testCompile 'com.jayway.restassured:rest-assured:2.9.0'
+    testCompile 'com.jayway.awaitility:awaitility-groovy:1.7.0'
+    testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile 'org.hamcrest:hamcrest-core:1.3'
+
+}
+
+sparkConfig {
+    publicFiles = '/public'
+    mapping = [
+            '/'                : file('src/test/resources/public/index.html').text,
+            '/index.html'      : file('src/test/resources/public/index.html').text,
+            '/about.html'      : file('src/test/resources/public/about.html').text,
+            '/offer.html'      : file('src/test/resources/public/offer.html').text,
+            '/about/history'   : file('src/test/resources/public/history.html').text,
+            '/about/index.html': ':)',
+            '/single.html': file('src/test/resources/public/single.html').text
+    ]
+}
+
+test {
+    exclude '**/*SystemTest*'
+    exclude '**/*IntegrationTest*'
+    afterTest { desc, result ->
+        println "RUNNING  ${desc.name} [${desc.className}] result: ${result.resultType}"
+    }
+}
+
+
+task(integrationTest, type: Test) {
+    include '**/*IntegrationTest*'
+
+    afterTest { desc, result ->
+        println "RUNNING  ${desc.name} [${desc.className}] result: ${result.resultType}"
+    }
+}
+
+task(systemTest, type: Test) {
+    include '**/*SystemTest*'
+
+    afterTest { desc, result ->
+        println "RUNNING  ${desc.name} [${desc.className}] result: ${result.resultType}"
+    }
+}
+
+integrationTest.dependsOn startSpark
+integrationTest.finalizedBy stopSpark
+
+systemTest.dependsOn startSpark
+systemTest.finalizedBy stopSpark

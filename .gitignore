@@ -1,0 +1,6 @@
+.idea/*
+.gradle/*
+build/
+
+buildSrc.iml
+web-walker.iml
